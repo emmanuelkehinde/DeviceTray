@@ -1,0 +1,45 @@
+name: DeviceTray
+options:
+  bundleIdPrefix: dev.devicetray
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "6.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  DeviceTray:
+    type: application
+    platform: macOS
+    sources: [DeviceTray]
+    info:
+      path: DeviceTray/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: DeviceTray
+        LSApplicationCategoryType: public.app-category.developer-tools
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: dev.devicetray.app
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+        GENERATE_INFOPLIST_FILE: NO
+  DeviceTrayTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources: [DeviceTrayTests]
+    dependencies:
+      - target: DeviceTray
+    settings:
+      base:
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  DeviceTray:
+    build:
+      targets:
+        DeviceTray: all
+        DeviceTrayTests: [test]
+    test:
+      targets: [DeviceTrayTests]
