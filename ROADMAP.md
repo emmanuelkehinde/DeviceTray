@@ -2,13 +2,13 @@
 
 ## 0.1.0: iOS Simulators
 
-- List simulators from `xcrun simctl list devices --json`, grouped by runtime, with booted ones first.
-- Boot and shut down a simulator.
-- Open a deep link or universal link in a booted simulator.
-- Send a push notification from a saved JSON payload.
-- Set or clear a simulated location.
-- Take a screenshot and copy it to the clipboard or save it to a folder.
-- Override the status bar for clean screenshots (time, battery, signal).
+- [x] List simulators from `xcrun simctl list devices --json`, grouped by runtime, with booted ones first.
+- [ ] Boot and shut down a simulator.
+- [ ] Open a deep link or universal link in a booted simulator.
+- [ ] Send a push notification from a saved JSON payload.
+- [ ] Set or clear a simulated location.
+- [ ] Take a screenshot and copy it to the clipboard or save it to a folder.
+- [ ] Override the status bar for clean screenshots (time, battery, signal).
 
 ## 0.2.0: Android emulators
 
