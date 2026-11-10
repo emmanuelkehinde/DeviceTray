@@ -1,0 +1,77 @@
+{
+  "devices" : {
+    "com.apple.CoreSimulator.SimRuntime.iOS-16-4" : [
+      {
+        "dataPath" : "\/Users\/dev\/Library\/Developer\/CoreSimulator\/Devices\/7A1C0D52-3B9E-4F6A-8D21-5E4B7C9A1F30\/data",
+        "logPath" : "\/Users\/dev\/Library\/Logs\/CoreSimulator\/7A1C0D52-3B9E-4F6A-8D21-5E4B7C9A1F30",
+        "udid" : "7A1C0D52-3B9E-4F6A-8D21-5E4B7C9A1F30",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-14",
+        "state" : "Shutdown",
+        "name" : "iPhone 14"
+      }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-17-5" : [
+      {
+        "dataPath" : "\/Users\/dev\/Library\/Developer\/CoreSimulator\/Devices\/B3E8F1A4-62C7-4D09-9A5B-0C1D2E3F4A51\/data",
+        "udid" : "B3E8F1A4-62C7-4D09-9A5B-0C1D2E3F4A51",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-15-Pro",
+        "state" : "Shutdown",
+        "name" : "iPhone 15 Pro"
+      },
+      {
+        "dataPath" : "\/Users\/dev\/Library\/Developer\/CoreSimulator\/Devices\/C94D2B67-1E3A-45F8-B7C0-8A9D6E5F4B32\/data",
+        "udid" : "C94D2B67-1E3A-45F8-B7C0-8A9D6E5F4B32",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-4th-generation",
+        "state" : "Booted",
+        "name" : "iPad Pro 11-inch"
+      },
+      {
+        "dataPath" : "\/Users\/dev\/Library\/Developer\/CoreSimulator\/Devices\/D05E3C78-2F4B-4609-A8D1-9B0E7F6A5C43\/data",
+        "udid" : "D05E3C78-2F4B-4609-A8D1-9B0E7F6A5C43",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-15",
+        "state" : "Booted",
+        "name" : "iPhone 15"
+      },
+      {
+        "dataPath" : "\/Users\/dev\/Library\/Developer\/CoreSimulator\/Devices\/E16F4D89-3A5C-471A-B9E2-AC1F8A7B6D54\/data",
+        "udid" : "E16F4D89-3A5C-471A-B9E2-AC1F8A7B6D54",
+        "isAvailable" : false,
+        "availabilityError" : "runtime profile not found",
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-SE-3rd-generation",
+        "state" : "Shutdown",
+        "name" : "iPhone SE (3rd generation)"
+      }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.iOS-17-2" : [
+      {
+        "udid" : "F2705EA0-4B6D-482B-8AF3-BD2A9B8C7E65",
+        "isAvailable" : false,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.iPhone-15-Plus",
+        "state" : "Shutdown",
+        "name" : "iPhone 15 Plus"
+      }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.watchOS-10-4" : [
+      {
+        "udid" : "0A381FB1-5C7E-493C-9B04-CE3BAC9D8F76",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.Apple-Watch-Series-9-45mm",
+        "state" : "Shutdown",
+        "name" : "Apple Watch Series 9 (45mm)"
+      }
+    ],
+    "com.apple.CoreSimulator.SimRuntime.xrOS-1-2" : [
+      {
+        "udid" : "1B492AC2-6D8F-4A5D-8C15-DF4CBDAE9A87",
+        "isAvailable" : true,
+        "deviceTypeIdentifier" : "com.apple.CoreSimulator.SimDeviceType.Apple-Vision-Pro",
+        "state" : "Shutdown",
+        "name" : "Apple Vision Pro"
+      }
+    ]
+  }
+}
