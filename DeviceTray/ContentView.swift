@@ -108,30 +108,60 @@ private struct SimulatorRow: View {
     let simulator: Simulator
     let model: SimulatorListViewModel
 
+    @State private var showsLinkField = false
+    @State private var link = ""
+
     var body: some View {
-        HStack(spacing: 6) {
-            Circle()
-                .fill(simulator.isBooted ? Color.green : Color.clear)
-                .frame(width: 8, height: 8)
-                .accessibilityLabel(simulator.isBooted ? "Booted" : "Shut down")
-            Text(simulator.name)
-                .lineLimit(1)
-            Spacer()
-            if model.isBusy(simulator) {
-                ProgressView()
-                    .controlSize(.small)
-            }
-            Button(simulator.isBooted ? "Shut Down" : "Boot") {
-                Task {
-                    if simulator.isBooted {
-                        await model.shutDown(simulator)
-                    } else {
-                        await model.boot(simulator)
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(simulator.isBooted ? Color.green : Color.clear)
+                    .frame(width: 8, height: 8)
+                    .accessibilityLabel(simulator.isBooted ? "Booted" : "Shut down")
+                Text(simulator.name)
+                    .lineLimit(1)
+                Spacer()
+                if model.isBusy(simulator) {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+                if simulator.isBooted {
+                    Button {
+                        showsLinkField.toggle()
+                    } label: {
+                        Image(systemName: "link")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Open a link")
+                }
+                Button(simulator.isBooted ? "Shut Down" : "Boot") {
+                    Task {
+                        if simulator.isBooted {
+                            await model.shutDown(simulator)
+                        } else {
+                            await model.boot(simulator)
+                        }
                     }
                 }
+                .controlSize(.small)
+                .disabled(model.isBusy(simulator))
             }
-            .controlSize(.small)
-            .disabled(model.isBusy(simulator))
+            if simulator.isBooted && showsLinkField {
+                HStack(spacing: 6) {
+                    TextField("myapp://path or https://...", text: $link)
+                        .textFieldStyle(.roundedBorder)
+                        .controlSize(.small)
+                        .onSubmit(openLink)
+                    Button("Open", action: openLink)
+                        .controlSize(.small)
+                        .disabled(model.isBusy(simulator))
+                }
+                .padding(.leading, 14)
+            }
         }
+    }
+
+    private func openLink() {
+        Task { await model.openLink(link, on: simulator) }
     }
 }

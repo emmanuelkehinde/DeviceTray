@@ -4,6 +4,7 @@ import Foundation
 enum SimctlCommand: Equatable, Sendable {
     case boot(udid: String)
     case shutdown(udid: String)
+    case openURL(udid: String, url: URL)
 
     /// Arguments passed to `xcrun`.
     var arguments: [String] {
@@ -12,6 +13,8 @@ enum SimctlCommand: Equatable, Sendable {
             return ["simctl", "boot", udid]
         case .shutdown(let udid):
             return ["simctl", "shutdown", udid]
+        case .openURL(let udid, let url):
+            return ["simctl", "openurl", udid, url.absoluteString]
         }
     }
 }

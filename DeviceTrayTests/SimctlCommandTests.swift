@@ -11,4 +11,11 @@ final class SimctlCommandTests: XCTestCase {
     func testShutdownArguments() {
         XCTAssertEqual(SimctlCommand.shutdown(udid: udid).arguments, ["simctl", "shutdown", udid])
     }
+
+    func testOpenURLArguments() throws {
+        let url = try XCTUnwrap(URL(string: "myapp://orders/42?tab=details"))
+        XCTAssertEqual(
+            SimctlCommand.openURL(udid: udid, url: url).arguments,
+            ["simctl", "openurl", udid, "myapp://orders/42?tab=details"])
+    }
 }

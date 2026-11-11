@@ -158,3 +158,67 @@ final class SimulatorActionTests: XCTestCase {
         XCTFail("Condition was never met")
     }
 }
+
+@MainActor
+final class OpenLinkActionTests: XCTestCase {
+    private let shutDownPhone = Simulator(
+        name: "iPhone 15 Pro", udid: "B3E8F1A4-62C7-4D09-9A5B-0C1D2E3F4A51", state: "Shutdown", isAvailable: true)
+    private let bootedPad = Simulator(
+        name: "iPad Pro 11-inch", udid: "C94D2B67-1E3A-45F8-B7C0-8A9D6E5F4B32", state: "Booted", isAvailable: true)
+
+    private func makeModel(_ runner: RecordingRunner) -> SimulatorListViewModel {
+        SimulatorListViewModel(runner: runner, openSimulatorApp: {})
+    }
+
+    func testOpensValidLinkWithoutReloadingList() async throws {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+
+        let opened = await model.openLink(" myapp://orders/42 ", on: bootedPad)
+
+        XCTAssertTrue(opened)
+        let commands = await runner.commands
+        let listCalls = await runner.listCalls
+        XCTAssertEqual(commands, [.openURL(udid: bootedPad.udid, url: try XCTUnwrap(URL(string: "myapp://orders/42")))])
+        XCTAssertEqual(listCalls, 0)
+        XCTAssertNil(model.actionErrorMessage)
+        XCTAssertFalse(model.isBusy(bootedPad))
+    }
+
+    func testInvalidLinkShowsErrorAndRunsNothing() async {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+
+        let opened = await model.openLink("example.com/orders", on: bootedPad)
+
+        XCTAssertFalse(opened)
+        let commands = await runner.commands
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(model.actionErrorMessage, SimulatorLinkError.missingScheme.localizedDescription)
+    }
+
+    func testShutDownSimulatorIsRejected() async {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+
+        let opened = await model.openLink("myapp://home", on: shutDownPhone)
+
+        XCTAssertFalse(opened)
+        let commands = await runner.commands
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(model.actionErrorMessage, "Could not open the link on iPhone 15 Pro. Boot it first.")
+    }
+
+    func testSimctlFailureShowsError() async {
+        let failure = SimctlError.failed(status: 1, message: "The operation couldn't be completed.")
+        let runner = RecordingRunner(listData: Data(), performError: failure)
+        let model = makeModel(runner)
+
+        let opened = await model.openLink("myapp://home", on: bootedPad)
+
+        XCTAssertFalse(opened)
+        let message = model.actionErrorMessage ?? ""
+        XCTAssertTrue(message.hasPrefix("Could not open the link on iPad Pro 11-inch."))
+        XCTAssertTrue(message.contains("exit code 1"))
+    }
+}
