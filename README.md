@@ -10,7 +10,7 @@ iOS and Android developers and testers who switch between simulators and emulato
 
 ## Status
 
-Early development. The menu-bar panel lists your iOS Simulators from `xcrun simctl list devices --json`, grouped by runtime with booted ones first and a green dot on each booted one. A refresh button reloads the list. Nothing controls a simulator yet: boot, deep links and the rest are planned in [ROADMAP.md](ROADMAP.md).
+Early development. The menu-bar panel lists your iOS Simulators from `xcrun simctl list devices --json`, grouped by runtime with booted ones first and a green dot on each booted one. A refresh button reloads the list. Each row has a Boot or Shut Down button, and Simulator.app opens after a boot. Deep links and the rest are planned in [ROADMAP.md](ROADMAP.md).
 
 ## Built with
 

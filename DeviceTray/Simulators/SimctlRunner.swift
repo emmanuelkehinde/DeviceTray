@@ -1,9 +1,28 @@
 import Foundation
 
-/// Returns the raw JSON from `xcrun simctl list devices --json`.
-/// Tests replace this with a fake.
+/// A simctl command that changes a simulator and has no output we need.
+enum SimctlCommand: Equatable, Sendable {
+    case boot(udid: String)
+    case shutdown(udid: String)
+
+    /// Arguments passed to `xcrun`.
+    var arguments: [String] {
+        switch self {
+        case .boot(let udid):
+            return ["simctl", "boot", udid]
+        case .shutdown(let udid):
+            return ["simctl", "shutdown", udid]
+        }
+    }
+}
+
+/// Runs `xcrun simctl`. Tests replace this with a fake.
 protocol SimctlRunning: Sendable {
+    /// Returns the raw JSON from `xcrun simctl list devices --json`.
     func listDevicesJSON() async throws -> Data
+
+    /// Runs `command` and throws if simctl exits with a non-zero status.
+    func perform(_ command: SimctlCommand) async throws
 }
 
 enum SimctlError: LocalizedError, Equatable {
@@ -25,6 +44,11 @@ struct SimctlRunner: SimctlRunning {
     func listDevicesJSON() async throws -> Data {
         // Process blocks, so run it off the main actor.
         try await Task.detached { try Self.run(["simctl", "list", "devices", "--json"]) }.value
+    }
+
+    func perform(_ command: SimctlCommand) async throws {
+        let arguments = command.arguments
+        _ = try await Task.detached { try Self.run(arguments) }.value
     }
 
     private static func run(_ arguments: [String]) throws -> Data {

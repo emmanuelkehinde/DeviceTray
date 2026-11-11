@@ -3,7 +3,7 @@
 ## 0.1.0: iOS Simulators
 
 - [x] List simulators from `xcrun simctl list devices --json`, grouped by runtime, with booted ones first.
-- [ ] Boot and shut down a simulator.
+- [x] Boot and shut down a simulator.
 - [ ] Open a deep link or universal link in a booted simulator.
 - [ ] Send a push notification from a saved JSON payload.
 - [ ] Set or clear a simulated location.

@@ -6,6 +6,9 @@ struct ContentView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             header
+            if let message = model.actionErrorMessage {
+                ActionErrorBanner(message: message) { model.dismissActionError() }
+            }
             content
             Divider()
             Button("Quit DeviceTray") {
@@ -54,7 +57,7 @@ struct ContentView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(model.groups) { group in
-                        RuntimeSection(group: group)
+                        RuntimeSection(group: group, model: model)
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -64,8 +67,30 @@ struct ContentView: View {
     }
 }
 
+private struct ActionErrorBanner: View {
+    let message: String
+    let dismiss: () -> Void
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 6) {
+            Text(message)
+                .font(.callout)
+                .foregroundStyle(.red)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            Button(action: dismiss) {
+                Image(systemName: "xmark.circle.fill")
+            }
+            .buttonStyle(.borderless)
+            .foregroundStyle(.secondary)
+            .help("Dismiss")
+        }
+    }
+}
+
 private struct RuntimeSection: View {
     let group: RuntimeGroup
+    let model: SimulatorListViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
@@ -73,7 +98,7 @@ private struct RuntimeSection: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             ForEach(group.simulators) { simulator in
-                SimulatorRow(simulator: simulator)
+                SimulatorRow(simulator: simulator, model: model)
             }
         }
     }
@@ -81,6 +106,7 @@ private struct RuntimeSection: View {
 
 private struct SimulatorRow: View {
     let simulator: Simulator
+    let model: SimulatorListViewModel
 
     var body: some View {
         HStack(spacing: 6) {
@@ -90,6 +116,22 @@ private struct SimulatorRow: View {
                 .accessibilityLabel(simulator.isBooted ? "Booted" : "Shut down")
             Text(simulator.name)
                 .lineLimit(1)
+            Spacer()
+            if model.isBusy(simulator) {
+                ProgressView()
+                    .controlSize(.small)
+            }
+            Button(simulator.isBooted ? "Shut Down" : "Boot") {
+                Task {
+                    if simulator.isBooted {
+                        await model.shutDown(simulator)
+                    } else {
+                        await model.boot(simulator)
+                    }
+                }
+            }
+            .controlSize(.small)
+            .disabled(model.isBusy(simulator))
         }
     }
 }

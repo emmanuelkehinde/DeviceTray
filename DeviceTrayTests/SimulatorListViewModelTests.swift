@@ -7,6 +7,8 @@ private struct FakeRunner: SimctlRunning {
     func listDevicesJSON() async throws -> Data {
         try result.get()
     }
+
+    func perform(_ command: SimctlCommand) async throws {}
 }
 
 /// Returns each result in turn, so a test can change the output between refreshes.
@@ -20,6 +22,8 @@ private actor SequenceRunner: SimctlRunning {
     func listDevicesJSON() async throws -> Data {
         try results.removeFirst().get()
     }
+
+    func perform(_ command: SimctlCommand) async throws {}
 }
 
 @MainActor
