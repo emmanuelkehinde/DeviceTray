@@ -18,4 +18,18 @@ final class SimctlCommandTests: XCTestCase {
             SimctlCommand.openURL(udid: udid, url: url).arguments,
             ["simctl", "openurl", udid, "myapp://orders/42?tab=details"])
     }
+
+    func testPushArgumentsWithBundleID() {
+        let payload = URL(fileURLWithPath: "/Users/me/Payloads/order shipped.json")
+        XCTAssertEqual(
+            SimctlCommand.push(udid: udid, bundleID: "com.example.app", payload: payload).arguments,
+            ["simctl", "push", udid, "com.example.app", "/Users/me/Payloads/order shipped.json"])
+    }
+
+    func testPushArgumentsWithoutBundleIDLeaveItOut() {
+        let payload = URL(fileURLWithPath: "/tmp/push.json")
+        XCTAssertEqual(
+            SimctlCommand.push(udid: udid, bundleID: nil, payload: payload).arguments,
+            ["simctl", "push", udid, "/tmp/push.json"])
+    }
 }

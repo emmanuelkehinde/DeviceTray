@@ -222,3 +222,167 @@ final class OpenLinkActionTests: XCTestCase {
         XCTAssertTrue(message.contains("exit code 1"))
     }
 }
+
+@MainActor
+final class SendPushActionTests: XCTestCase {
+    private let shutDownPhone = Simulator(
+        name: "iPhone 15 Pro", udid: "B3E8F1A4-62C7-4D09-9A5B-0C1D2E3F4A51", state: "Shutdown", isAvailable: true)
+    private let bootedPad = Simulator(
+        name: "iPad Pro 11-inch", udid: "C94D2B67-1E3A-45F8-B7C0-8A9D6E5F4B32", state: "Booted", isAvailable: true)
+
+    // XCTest makes a new instance for each test, so each test gets its own
+    // defaults suite and folder.
+    private let suiteName = "SendPushActionTests-\(UUID().uuidString)"
+    private lazy var defaults = UserDefaults(suiteName: suiteName)!
+    private lazy var directory = FileManager.default.temporaryDirectory
+        .appendingPathComponent(suiteName, isDirectory: true)
+
+    override func setUp() async throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    }
+
+    override func tearDown() async throws {
+        defaults.removePersistentDomain(forName: suiteName)
+        try FileManager.default.removeItem(at: directory)
+    }
+
+    private func makeModel(_ runner: RecordingRunner) -> SimulatorListViewModel {
+        SimulatorListViewModel(runner: runner, openSimulatorApp: {}, defaults: defaults)
+    }
+
+    private func writePayload(_ text: String, name: String = "shipped.json") throws -> String {
+        let url = directory.appendingPathComponent(name)
+        try Data(text.utf8).write(to: url)
+        return url.path
+    }
+
+    func testSendsPushWithBundleIDWithoutReloadingList() async throws {
+        let path = try writePayload(#"{"aps":{"alert":"Your order shipped"}}"#)
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+        model.pushPayloadPath = path
+        model.pushBundleID = "com.example.shop"
+
+        let sent = await model.sendPush(to: bootedPad)
+
+        XCTAssertTrue(sent)
+        let commands = await runner.commands
+        let listCalls = await runner.listCalls
+        XCTAssertEqual(
+            commands,
+            [.push(udid: bootedPad.udid, bundleID: "com.example.shop", payload: URL(fileURLWithPath: path))])
+        XCTAssertEqual(listCalls, 0)
+        XCTAssertNil(model.actionErrorMessage)
+        XCTAssertEqual(model.actionSuccessMessage, "Sent shipped.json to iPad Pro 11-inch.")
+        XCTAssertFalse(model.isBusy(bootedPad))
+    }
+
+    func testSendsPushWithoutBundleIDWhenPayloadNamesTarget() async throws {
+        let path = try writePayload(#"{"Simulator Target Bundle":"com.example.shop","aps":{"badge":1}}"#)
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+        model.pushPayloadPath = path
+
+        let sent = await model.sendPush(to: bootedPad)
+
+        XCTAssertTrue(sent)
+        let commands = await runner.commands
+        XCTAssertEqual(commands, [.push(udid: bootedPad.udid, bundleID: nil, payload: URL(fileURLWithPath: path))])
+    }
+
+    func testInvalidPayloadShowsErrorAndRunsNothing() async throws {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+        model.pushPayloadPath = try writePayload(#"{"alert":"No aps"}"#)
+        model.pushBundleID = "com.example.shop"
+
+        let sent = await model.sendPush(to: bootedPad)
+
+        XCTAssertFalse(sent)
+        let commands = await runner.commands
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(model.actionErrorMessage, PushPayloadError.missingAPS.localizedDescription)
+        XCTAssertNil(model.actionSuccessMessage)
+    }
+
+    func testMissingBundleIDShowsError() async throws {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+        model.pushPayloadPath = try writePayload(#"{"aps":{"alert":"Hi"}}"#)
+
+        let sent = await model.sendPush(to: bootedPad)
+
+        XCTAssertFalse(sent)
+        XCTAssertEqual(model.actionErrorMessage, PushPayloadError.missingBundleID.localizedDescription)
+    }
+
+    func testShutDownSimulatorIsRejected() async throws {
+        let runner = RecordingRunner(listData: Data())
+        let model = makeModel(runner)
+        model.pushPayloadPath = try writePayload(#"{"aps":{"alert":"Hi"}}"#)
+        model.pushBundleID = "com.example.shop"
+
+        let sent = await model.sendPush(to: shutDownPhone)
+
+        XCTAssertFalse(sent)
+        let commands = await runner.commands
+        XCTAssertTrue(commands.isEmpty)
+        XCTAssertEqual(model.actionErrorMessage, "Could not send the notification to iPhone 15 Pro. Boot it first.")
+    }
+
+    func testSimctlFailureShowsErrorAndClearsEarlierSuccess() async throws {
+        let model = makeModel(RecordingRunner(listData: Data()))
+        model.pushPayloadPath = try writePayload(#"{"aps":{"alert":"Hi"}}"#)
+        model.pushBundleID = "com.example.shop"
+        await model.sendPush(to: bootedPad)
+        XCTAssertNotNil(model.actionSuccessMessage)
+
+        let failure = SimctlError.failed(status: 22, message: "Invalid device: Shutdown")
+        let failing = SimulatorListViewModel(
+            runner: RecordingRunner(listData: Data(), performError: failure), openSimulatorApp: {}, defaults: defaults)
+        let sent = await failing.sendPush(to: bootedPad)
+
+        XCTAssertFalse(sent)
+        let message = try XCTUnwrap(failing.actionErrorMessage)
+        XCTAssertTrue(message.hasPrefix("Could not send the notification to iPad Pro 11-inch."))
+        XCTAssertTrue(message.contains("exit code 22"))
+        XCTAssertNil(failing.actionSuccessMessage)
+    }
+
+    func testValidationErrorReplacesSuccessMessage() async throws {
+        let model = makeModel(RecordingRunner(listData: Data()))
+        model.pushPayloadPath = try writePayload(#"{"aps":{"alert":"Hi"}}"#)
+        model.pushBundleID = "com.example.shop"
+        await model.sendPush(to: bootedPad)
+        XCTAssertNotNil(model.actionSuccessMessage)
+
+        model.pushPayloadPath = ""
+        await model.sendPush(to: bootedPad)
+
+        XCTAssertNil(model.actionSuccessMessage)
+        XCTAssertEqual(model.actionErrorMessage, PushPayloadError.noFile.localizedDescription)
+    }
+
+    func testDismissActionSuccessClearsIt() async throws {
+        let model = makeModel(RecordingRunner(listData: Data()))
+        model.pushPayloadPath = try writePayload(#"{"aps":{"alert":"Hi"}}"#)
+        model.pushBundleID = "com.example.shop"
+        await model.sendPush(to: bootedPad)
+
+        model.dismissActionSuccess()
+        XCTAssertNil(model.actionSuccessMessage)
+    }
+
+    func testRemembersPayloadPathAndBundleID() {
+        let first = makeModel(RecordingRunner(listData: Data()))
+        XCTAssertEqual(first.pushPayloadPath, "")
+        XCTAssertEqual(first.pushBundleID, "")
+
+        first.pushPayloadPath = "/Users/me/Payloads/shipped.json"
+        first.pushBundleID = "com.example.shop"
+
+        let second = makeModel(RecordingRunner(listData: Data()))
+        XCTAssertEqual(second.pushPayloadPath, "/Users/me/Payloads/shipped.json")
+        XCTAssertEqual(second.pushBundleID, "com.example.shop")
+    }
+}

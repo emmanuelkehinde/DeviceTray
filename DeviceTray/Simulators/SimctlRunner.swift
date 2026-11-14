@@ -5,6 +5,8 @@ enum SimctlCommand: Equatable, Sendable {
     case boot(udid: String)
     case shutdown(udid: String)
     case openURL(udid: String, url: URL)
+    /// With a nil bundle ID, simctl reads "Simulator Target Bundle" from the payload.
+    case push(udid: String, bundleID: String?, payload: URL)
 
     /// Arguments passed to `xcrun`.
     var arguments: [String] {
@@ -15,6 +17,8 @@ enum SimctlCommand: Equatable, Sendable {
             return ["simctl", "shutdown", udid]
         case .openURL(let udid, let url):
             return ["simctl", "openurl", udid, url.absoluteString]
+        case .push(let udid, let bundleID, let payload):
+            return ["simctl", "push", udid] + (bundleID.map { [$0] } ?? []) + [payload.path]
         }
     }
 }

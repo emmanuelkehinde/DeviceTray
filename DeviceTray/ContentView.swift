@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @State private var model = SimulatorListViewModel()
@@ -7,7 +8,9 @@ struct ContentView: View {
         VStack(alignment: .leading, spacing: 8) {
             header
             if let message = model.actionErrorMessage {
-                ActionErrorBanner(message: message) { model.dismissActionError() }
+                ActionBanner(message: message, isError: true) { model.dismissActionError() }
+            } else if let message = model.actionSuccessMessage {
+                ActionBanner(message: message, isError: false) { model.dismissActionSuccess() }
             }
             content
             Divider()
@@ -67,15 +70,20 @@ struct ContentView: View {
     }
 }
 
-private struct ActionErrorBanner: View {
+private struct ActionBanner: View {
     let message: String
+    let isError: Bool
     let dismiss: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: 6) {
+            if !isError {
+                Image(systemName: "checkmark.circle.fill")
+                    .foregroundStyle(.green)
+            }
             Text(message)
                 .font(.callout)
-                .foregroundStyle(.red)
+                .foregroundStyle(isError ? Color.red : Color.primary)
                 .textSelection(.enabled)
                 .frame(maxWidth: .infinity, alignment: .leading)
             Button(action: dismiss) {
@@ -106,9 +114,10 @@ private struct RuntimeSection: View {
 
 private struct SimulatorRow: View {
     let simulator: Simulator
-    let model: SimulatorListViewModel
+    @Bindable var model: SimulatorListViewModel
 
     @State private var showsLinkField = false
+    @State private var showsPushFields = false
     @State private var link = ""
 
     var body: some View {
@@ -133,6 +142,13 @@ private struct SimulatorRow: View {
                     }
                     .buttonStyle(.borderless)
                     .help("Open a link")
+                    Button {
+                        showsPushFields.toggle()
+                    } label: {
+                        Image(systemName: "bell")
+                    }
+                    .buttonStyle(.borderless)
+                    .help("Send a push notification")
                 }
                 Button(simulator.isBooted ? "Shut Down" : "Boot") {
                     Task {
@@ -158,10 +174,65 @@ private struct SimulatorRow: View {
                 }
                 .padding(.leading, 14)
             }
+            if simulator.isBooted && showsPushFields {
+                pushFields
+                    .padding(.leading, 14)
+            }
         }
+    }
+
+    private var pushFields: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 6) {
+                Text(payloadName)
+                    .font(.callout)
+                    .foregroundStyle(model.pushPayloadPath.isEmpty ? .secondary : .primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .help(model.pushPayloadPath)
+                Spacer()
+                Button("Choose…", action: choosePayload)
+                    .controlSize(.small)
+            }
+            HStack(spacing: 6) {
+                TextField("Bundle ID, optional if the payload has one", text: $model.pushBundleID)
+                    .textFieldStyle(.roundedBorder)
+                    .controlSize(.small)
+                    .onSubmit(sendPush)
+                Button("Send", action: sendPush)
+                    .controlSize(.small)
+                    .disabled(model.isBusy(simulator))
+            }
+        }
+    }
+
+    private var payloadName: String {
+        model.pushPayloadPath.isEmpty
+            ? "No payload chosen"
+            : URL(fileURLWithPath: model.pushPayloadPath).lastPathComponent
     }
 
     private func openLink() {
         Task { await model.openLink(link, on: simulator) }
+    }
+
+    private func sendPush() {
+        Task { await model.sendPush(to: simulator) }
+    }
+
+    private func choosePayload() {
+        let panel = NSOpenPanel()
+        panel.allowedContentTypes = [.json]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        panel.message = "Choose a push notification payload"
+        if !model.pushPayloadPath.isEmpty {
+            panel.directoryURL = URL(fileURLWithPath: model.pushPayloadPath).deletingLastPathComponent()
+        }
+        // DeviceTray has no Dock icon, so bring it forward or the panel opens behind other apps.
+        NSApp.activate()
+        if panel.runModal() == .OK, let url = panel.url {
+            model.pushPayloadPath = url.path
+        }
     }
 }

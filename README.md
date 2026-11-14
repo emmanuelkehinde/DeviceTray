@@ -10,7 +10,7 @@ iOS and Android developers and testers who switch between simulators and emulato
 
 ## Status
 
-Early development. The menu-bar panel lists your iOS Simulators from `xcrun simctl list devices --json`, grouped by runtime with booted ones first and a green dot on each booted one. A refresh button reloads the list. Each row has a Boot or Shut Down button, and Simulator.app opens after a boot. On a booted simulator, the link button opens a field where you can enter a deep link or universal link, which DeviceTray opens with `xcrun simctl openurl`. Push notifications, locations and the rest are planned in [ROADMAP.md](ROADMAP.md).
+Early development. The menu-bar panel lists your iOS Simulators from `xcrun simctl list devices --json`, grouped by runtime with booted ones first and a green dot on each booted one. A refresh button reloads the list. Each row has a Boot or Shut Down button, and Simulator.app opens after a boot. On a booted simulator, the link button opens a field where you can enter a deep link or universal link, which DeviceTray opens with `xcrun simctl openurl`. The bell button sends a push notification with `xcrun simctl push`. Choose a JSON payload file and enter the app's bundle ID, or leave the bundle ID empty if the payload has a `Simulator Target Bundle` key. DeviceTray checks that the payload is a JSON object of 4096 bytes or less with an `aps` dictionary, and remembers the last file and bundle ID. Locations and the rest are planned in [ROADMAP.md](ROADMAP.md).
 
 ## Built with
 
